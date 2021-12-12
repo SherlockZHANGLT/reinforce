@@ -27,8 +27,9 @@ START_Y = 10        # (GUI) y axis offset (top margin)
 SECOND_M_X = START_X + GRID_WORLD_H * UNIT + GRID_WORLD_DIST    # x axis offset of the second GRID_WORLD
 SECOND_M_Y = START_Y                                # y axis offset of the second GRID_WORLD
 GRID_HALF = UNIT / 2    # (GUI) half pixel of grid side length
-ACTION_IDS = ["up", "down",  "left",  "right"]
+ACTION_IDS = ["up", "down",  "left",  "right"]#,"ud","ul","ur","dl","dr","lr","udl","udr","ulr","dlr","all"
 PENALTY = -2
+symbol=['|','⭠⭡', '⭡⭢','⭠⭣','⭣⭢','⭠⭢','⭠|', '|⭢','⭠⭡⭢','⭠⭣⭢', '+',]
 #--------------------------------------------------------------------------------------------------------------
 
 # enironment and GUI
@@ -113,6 +114,8 @@ class GridWorld(tk.Tk, object):
     def get_action_arrow(self, s, action):  # (GUI) get symbols corresponding to actions
         if is_terminal_state(s):
             return '⭯'
+        if action > 3:
+            return symbol[action-4]
         options = {
             self.s_action_ids.index('up'): '⭡',
             self.s_action_ids.index('down'): '⭣',
