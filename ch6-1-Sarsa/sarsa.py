@@ -24,7 +24,7 @@ ACTION_PROBABILITY = [0.4, 0.2, 0.2, 0.2]
 Q_VALUE_RANGE = 20
 ALPHA_CONSTANT = 1.0
 GAMMA = 0.9
-LR=0.1
+Alpha=0.1
 
 #Class Monte Carlo Epsilon Soft - First Visit
 class Sarsa():
@@ -84,6 +84,8 @@ class Sarsa():
         self.print_Qlist()
 
     def get_policy(self):                   # get policy list
+        for i in range(len(self.Pi)):
+            self.Pi[i]=self.deterministic_pi(i)
         return self.Pi
 
     # calculate index of average Return value column corresponding to action
@@ -95,8 +97,44 @@ class Sarsa():
         return a
 
     def deterministic_pi(self, s):
-        a = self.get_argmax_action(s)
-        return a
+        max_a = -1
+        nn=2
+        for a in range(self.n_actions):
+            n_idx = self.get_a_num_idx(a)
+            if(self.q_list.loc[s, n_idx]):
+                v_idx = self.get_a_value_idx(a)
+                if(max_a == -1):
+                    max_q = self.q_list.loc[s, v_idx]
+                    max_a = a
+                elif (max_q < self.q_list.loc[s, v_idx]):
+                    max_a = a
+                    max_q = self.q_list.loc[s, v_idx]
+                elif (max_q == self.q_list.loc[s, v_idx]):
+                    i = random.randint(1,nn)
+                    nn=nn+1
+                    if(i==1):
+                        max_a = a
+                        max_q = self.q_list.loc[s, v_idx]
+        if max_a == -1:
+            max_a =0
+        if max_a >= self.n_actions:
+            max_a = 0
+        a_list=[]
+        for a in range(self.n_actions):
+            n_idx = self.get_a_num_idx(a)
+            if(self.q_list.loc[s, n_idx]):
+                v_idx = self.get_a_value_idx(a)
+                if (max_q-self.q_list.loc[s, v_idx]<=0.3 and self.q_list.loc[s, a]>40):
+                    a_list.append(a)
+        if(len(a_list)==2):
+            max_a=a_list[0]+a_list[1]+4
+            if(a_list[0]==0 or a_list[1]==0):
+                max_a=max_a-1
+        elif(len(a_list)==3):
+            max_a=a_list[0]+a_list[1]+a_list[2]+7
+        elif(len(a_list)==4):
+            max_a=14
+        return max_a
 
     def get_pi_bp_ratio(self, s, pi_a, prob):
         if (self.PiProb[s][self.n_actions]):
@@ -138,6 +176,7 @@ class Sarsa():
     # get the action which leads to the highest Return on state s
     def get_argmax_action(self, s):
         max_a = -1
+        nn=2
         for a in range(self.n_actions):
             n_idx = self.get_a_num_idx(a)
             if(self.q_list.loc[s, n_idx]):
@@ -148,6 +187,12 @@ class Sarsa():
                 elif (max_q < self.q_list.loc[s, v_idx]):
                     max_a = a
                     max_q = self.q_list.loc[s, v_idx]
+                elif (max_q == self.q_list.loc[s, v_idx]):
+                    i = random.randint(1,nn)
+                    nn=nn+1
+                    if(i==1):
+                        max_a = a
+                        max_q = self.q_list.loc[s, v_idx]
         if max_a == -1:
             max_a =0
         if max_a >= self.n_actions:
@@ -188,7 +233,7 @@ class Sarsa():
             return ACTION_PROBABILITY[prob], ga
         prob += 3
         pair = (sa, ma, ga)
-        ra = state.get_random_remian_actions(pair)
+        ra = state.get_random_remain_actions(pair)
         return ACTION_PROBABILITY[prob],ra
 # ALGORITHM: off-policy Monte Carlo E
 # -First Visit is hiden in episode generation procedure in game-state class.
@@ -197,7 +242,7 @@ class Sarsa():
         self.sarsa_initQ()
         while True:
             S = self.gg.get_random_state_id() #get a state randomly, ID is S
-            A = self.epsilon_greedy_pi(S)  # the epsilon greedy policy to choose an action, as Q has values already
+            A = self.epsilon_greedy_pi(S)  # the epsilon greedy policy to choose an action, as Q has values aAlphaeady
             self.Pi[S] = A
             while not env.is_terminal_state(S):
                 S_P = self.gg.get_next_state_id(S,A)
@@ -205,7 +250,7 @@ class Sarsa():
                 A_P = self.epsilon_greedy_pi(S_P)
                 Q_sa, n_q = self.get_Q_value(S, A)
                 Q_spap, n_pq = self.get_Q_value(S_P, A_P)
-                Q_sa = Q_sa + LR*(R + GAMMA * Q_spap - Q_sa)
+                Q_sa = Q_sa + Alpha*(R + GAMMA * Q_spap - Q_sa)
                 self.set_Q_value(S, A, Q_sa)
                 S = S_P
                 A = A_P
@@ -216,10 +261,6 @@ class Sarsa():
         # Show the resulted policiy and Q table
         print("Policy: " + str(self.Pi))
         self.print_Qlist()
-
-
-
-
 
 
 
